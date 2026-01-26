@@ -123,7 +123,6 @@
 </head>
 <body>
 
-
 <div class="grid-container">
     <div class="grid" id="animalGrid"></div>
 </div>
@@ -131,6 +130,44 @@
 <div class="scroll-indicator">Scroll for more animals ↓</div>
 
 <script>
+    // Speech Manager to handle speech synthesis with interruption
+    const SpeechManager = {
+        currentUtterance: null,
+        isSpeaking: false,
+        
+        speak(text, langCode) {
+            // Cancel any ongoing speech immediately
+            this.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langCode;
+            utterance.rate = 0.8;
+            
+            this.currentUtterance = utterance;
+            
+            utterance.onend = () => {
+                this.currentUtterance = null;
+                this.isSpeaking = false;
+            };
+            
+            utterance.onerror = () => {
+                this.currentUtterance = null;
+                this.isSpeaking = false;
+            };
+            
+            this.isSpeaking = true;
+            window.speechSynthesis.speak(utterance);
+        },
+        
+        cancel() {
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                this.currentUtterance = null;
+                this.isSpeaking = false;
+            }
+        }
+    };
+
     const languages = [
         { code: 'en-US', name: 'English' },
         { code: 'fr-FR', name: 'Français' },
@@ -204,10 +241,7 @@
     }
 
     function speak(text, langCode) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = langCode;
-        utterance.rate = 0.8;
-        window.speechSynthesis.speak(utterance);
+        SpeechManager.speak(text, langCode);
     }
 
     function getAnimalName(animal, langCode) {
@@ -264,7 +298,7 @@
                 // Update the display
                 updateCardDisplay(card, animal);
                 
-                // Speak the name
+                // Speak the name (SpeechManager will cancel any ongoing speech)
                 const name = getAnimalName(animal, newLang.code);
                 speak(name, newLang.code);
             };
