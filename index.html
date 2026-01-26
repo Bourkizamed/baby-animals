@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Baby Animal World</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root { --bg-color: #f0fdf4; --card-color: #ffffff; --text-color: #333; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            height: 100vh;
+            justify-content: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+        }
+        .animal-card {
+            background: var(--card-color);
+            border-radius: 25px;
+            padding: 30px 10px;
+            text-align: center;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            -webkit-tap-highlight-color: transparent;
+            cursor: pointer;
+        }
+        .animal-card:active { transform: scale(0.95); }
+        .emoji { font-size: 5rem; display: block; margin-bottom: 10px; }
+        .name { font-size: 1.5rem; font-weight: bold; color: var(--text-color); }
+        .lang-hint {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="grid" id="animalGrid"></div>
+
+<script>
+    const languages = ['en-US', 'fr-FR', 'ar-SA'];
+    const animals = [
+        { en: "Lion", fr: "Lion", ar: "أسد", emoji: "🦁" },
+        { en: "Cat", fr: "Chat", ar: "قطة", emoji: "🐱" },
+        { en: "Dog", fr: "Chien", ar: "كلب", emoji: "🐶" },
+        { en: "Cow", fr: "Vache", ar: "بقرة", emoji: "🐮" },
+        { en: "Elephant", fr: "Éléphant", ar: "فيل", emoji: "🐘" },
+        { en: "Bird", fr: "Oiseau", ar: "عصفور", emoji: "🐦" }
+    ];
+
+    function getRandomLanguage() {
+        return languages[Math.floor(Math.random() * languages.length)];
+    }
+
+    function speak(text, lang) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = 0.8;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function getAnimalName(animal, lang) {
+        switch(lang) {
+            case 'fr-FR': return animal.fr;
+            case 'ar-SA': return animal.ar;
+            default: return animal.en;
+        }
+    }
+
+    function render() {
+        const grid = document.getElementById('animalGrid');
+        grid.innerHTML = '';
+        
+        animals.forEach(animal => {
+            const card = document.createElement('div');
+            card.className = 'animal-card';
+            
+            // Default display in English
+            card.innerHTML = `
+                <span class="emoji">${animal.emoji}</span>
+                <span class="name">${animal.en}</span>
+            `;
+            
+            card.onclick = () => {
+                const randomLang = getRandomLanguage();
+                const name = getAnimalName(animal, randomLang);
+                
+                // Temporarily show the name in the randomly selected language
+                const nameSpan = card.querySelector('.name');
+                const originalName = nameSpan.textContent;
+                nameSpan.textContent = name;
+                
+                // Add language hint
+                let langText = '';
+                if (randomLang === 'fr-FR') langText = 'Français';
+                else if (randomLang === 'ar-SA') langText = 'العربية';
+                else langText = 'English';
+                
+                // Create or update hint
+                let hint = card.querySelector('.lang-hint');
+                if (!hint) {
+                    hint = document.createElement('div');
+                    hint.className = 'lang-hint';
+                    card.appendChild(hint);
+                }
+                hint.textContent = `(${langText})`;
+                
+                speak(name, randomLang);
+                
+                // Revert to English after 2 seconds
+                setTimeout(() => {
+                    nameSpan.textContent = originalName;
+                    if (hint) hint.textContent = '';
+                }, 2000);
+            };
+            
+            grid.appendChild(card);
+        });
+    }
+
+    render();
+    
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+</body>
+</html>
