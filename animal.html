@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Baby Animal World</title>
+<link rel="manifest" href="manifest.json">
+
+    <style>
+        :root { --bg-color: #f0fdf4; --card-color: #ffffff; --text-color: #333; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: manipulation;
+            user-select: none; /* Prevents her from highlighting text */
+            -webkit-user-select: none;
+            overflow: hidden; /* Prevents scrolling away */
+        }
+        header { padding: 20px; text-align: center; }
+        .lang-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+        button.lang-btn {
+            padding: 15px 25px; font-size: 1.2rem; border: none;
+            border-radius: 50px; cursor: pointer; background: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button.active { background: #4ade80; color: white; font-weight: bold; }
+        .grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 20px; padding: 20px; width: 100%; max-width: 500px;
+            box-sizing: border-box;
+        }
+        .animal-card {
+            background: var(--card-color); border-radius: 25px;
+            padding: 30px 10px; text-align: center;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .animal-card:active { transform: scale(0.95); }
+        .emoji { font-size: 5rem; display: block; margin-bottom: 10px; }
+        .name { font-size: 1.5rem; font-weight: bold; color: var(--text-color); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="lang-selector">
+        <button class="lang-btn active" onclick="setLang('en-US', this)">English</button>
+        <button class="lang-btn" onclick="setLang('fr-FR', this)">Français</button>
+        <button class="lang-btn" onclick="setLang('ar-SA', this)">العربية</button>
+    </div>
+</header>
+
+<div class="grid" id="animalGrid"></div>
+
+<script>
+    let currentLang = 'en-US';
+    const animals = [
+        { en: "Lion", fr: "Lion", ar: "أسد", emoji: "🦁" },
+        { en: "Cat", fr: "Chat", ar: "قطة", emoji: "🐱" },
+        { en: "Dog", fr: "Chien", ar: "كلب", emoji: "🐶" },
+        { en: "Cow", fr: "Vache", ar: "بقرة", emoji: "🐮" },
+        { en: "Elephant", fr: "Éléphant", ar: "فيل", emoji: "🐘" },
+        { en: "Bird", fr: "Oiseau", ar: "عصفور", emoji: "🐦" }
+    ];
+
+    function setLang(lang, btn) {
+        currentLang = lang;
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+    }
+
+    function speak(text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = currentLang;
+        utterance.rate = 0.8;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function render() {
+        const grid = document.getElementById('animalGrid');
+        grid.innerHTML = '';
+        animals.forEach(animal => {
+            const card = document.createElement('div');
+            card.className = 'animal-card';
+            let name = animal.en;
+            if(currentLang === 'fr-FR') name = animal.fr;
+            if(currentLang === 'ar-SA') name = animal.ar;
+            card.innerHTML = `<span class="emoji">${animal.emoji}</span><span class="name">${name}</span>`;
+            card.onclick = () => speak(name);
+            grid.appendChild(card);
+        });
+    }
+    render();
+    // Register the service worker to enable PWA/Standalone mode
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}
+
+</script>
+</body>
+</html>
