@@ -2,132 +2,230 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Baby Animal World</title>
-    <link rel="manifest" href="manifest.json">
     <style>
-        :root { --bg-color: #f0fdf4; --card-color: #ffffff; --text-color: #333; }
+        :root { 
+            --bg-color: #121212; /* Dark background for high contrast */
+            --text-color: #ffffff; 
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            touch-action: manipulation;
+            justify-content: center;
+            /* Prevent all accidental scrolling and gestures */
+            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
+            position: fixed;
         }
-        .title {
-            margin: 20px 0 10px 0;
-            font-size: 1.8rem;
-            color: #2d3748;
-            text-align: center;
-            padding: 0 20px;
+
+        /* Hidden but present for accessibility/SEO */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
         }
-        .subtitle {
-            color: #4a5568;
-            margin-bottom: 20px;
-            text-align: center;
-            padding: 0 20px;
-        }
+
         .grid-container {
             width: 100%;
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 20px 20px 20px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
             box-sizing: border-box;
+            transition: opacity 0.3s ease;
         }
+
         .grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            max-width: 500px;
-            margin: 0 auto;
-            padding-bottom: 30px;
+            gap: 15px;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 90vh;
         }
+
+        /* Portrait orientation: 2 columns, 3 rows */
+        @media (orientation: portrait) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(3, 1fr);
+            }
+        }
+
+        /* Landscape orientation: 3 columns, 2 rows */
+        @media (orientation: landscape) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+            }
+            
+            /* Adjust font sizes for landscape */
+            .emoji { 
+                font-size: clamp(4rem, 10vw, 5rem) !important;
+            }
+            
+            .name { 
+                font-size: clamp(1rem, 4vw, 1.8rem) !important;
+            }
+        }
+
         .animal-card {
-            background: var(--card-color);
-            border-radius: 25px;
-            padding: 30px 10px;
+            border-radius: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
             -webkit-tap-highlight-color: transparent;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 1;
         }
-        .animal-card:hover {
-            box-shadow: 0 12px 20px rgba(0,0,0,0.15);
-        }
+
+        /* High-saturation colors for baby visual stimulation */
+        .animal-card:nth-child(1) { background-color: #ff595e; } /* Red */
+        .animal-card:nth-child(2) { background-color: #ffca3a; } /* Yellow */
+        .animal-card:nth-child(3) { background-color: #8ac926; } /* Green */
+        .animal-card:nth-child(4) { background-color: #1982c4; } /* Blue */
+        .animal-card:nth-child(5) { background-color: #6a4c93; } /* Purple */
+        .animal-card:nth-child(6) { background-color: #ff924c; } /* Orange */
+
         .animal-card:active { 
-            transform: scale(0.95); 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: scale(0.92); 
+            filter: brightness(1.2);
         }
+
         .emoji { 
-            font-size: 5rem; 
+            font-size: clamp(4rem, 15vw, 6rem);
             display: block; 
-            margin-bottom: 10px; 
-            transition: transform 0.3s;
-        }
-        .animal-card:active .emoji {
-            transform: scale(1.1);
-        }
-        .name { 
-            font-size: 1.5rem; 
-            font-weight: bold; 
-            color: var(--text-color);
             margin-bottom: 5px;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+            transition: transform 0.3s ease;
         }
-        .lang-hint {
-            font-size: 0.9rem;
-            color: #4ade80;
-            font-weight: 500;
-            opacity: 0.9;
+
+        .name { 
+            font-size: clamp(1.2rem, 5vw, 2.2rem);
+            font-weight: 900; 
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.3s ease;
         }
-        .scroll-indicator {
+
+        /* Zoom overlay styles */
+        .zoom-overlay {
             position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8rem;
-            color: #718096;
-            animation: bounce 2s infinite;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-color);
+        }
+
+        .zoomed-card {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: 0;
+            animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .zoomed-emoji {
+            font-size: clamp(8rem, 30vw, 12rem);
+            display: block;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 8px 8px rgba(0,0,0,0.3));
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .zoomed-name {
+            font-size: clamp(2.5rem, 10vw, 5rem);
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        @keyframes zoomIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomOut {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Hide grid when zoomed */
+        .zooming .grid-container {
+            opacity: 0;
             pointer-events: none;
-        }
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {transform: translateX(-50%) translateY(0);}
-            40% {transform: translateX(-50%) translateY(-10px);}
-            60% {transform: translateX(-50%) translateY(-5px);}
-        }
-        /* Custom scrollbar */
-        .grid-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        .grid-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        .grid-container::-webkit-scrollbar-thumb {
-            background: #c6f6d5;
-            border-radius: 4px;
-        }
-        .grid-container::-webkit-scrollbar-thumb:hover {
-            background: #9ae6b4;
         }
     </style>
 </head>
 <body>
 
+<h1 class="sr-only">Baby Animal World</h1>
+
 <div class="grid-container">
     <div class="grid" id="animalGrid"></div>
 </div>
 
-<div class="scroll-indicator">Scroll for more animals ↓</div>
+<!-- Zoom overlay -->
+<div class="zoom-overlay" id="zoomOverlay"></div>
 
 <script>
     // Speech Manager to handle speech synthesis with interruption
@@ -142,6 +240,13 @@
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = langCode;
             utterance.rate = 0.8;
+            utterance.pitch = 1.2; // Higher pitch for baby-friendly tone
+            utterance.volume = 1;
+            
+            // Adjust for Arabic - slower for proper pronunciation
+            if (langCode === 'ar-SA') {
+                utterance.rate = 0.7;
+            }
             
             this.currentUtterance = utterance;
             
@@ -168,81 +273,28 @@
         }
     };
 
+    const animals = [
+        // Original 6 animals - using Arabic with تشكيل for better pronunciation
+        { en: "Lion", fr: "Lion", ar: "أَسَد", emoji: "🦁" },
+        { en: "Cat", fr: "Chat", ar: "قِطَّة", emoji: "🐱" },
+        { en: "Dog", fr: "Chien", ar: "كَلْب", emoji: "🐶" },
+        { en: "Cow", fr: "Vache", ar: "بَقَرَة", emoji: "🐮" },
+        { en: "Elephant", fr: "Éléphant", ar: "فِيل", emoji: "🐘" },
+        { en: "Bird", fr: "Oiseau", ar: "عُصْفُور", emoji: "🐦" }
+    ];
+
     const languages = [
         { code: 'en-US', name: 'English' },
         { code: 'fr-FR', name: 'Français' },
         { code: 'ar-SA', name: 'العربية' }
     ];
-    
-    const animals = [
-        // Original animals
-        { en: "Lion", fr: "Lion", ar: "أسد", emoji: "🦁" },
-        { en: "Cat", fr: "Chat", ar: "قطة", emoji: "🐱" },
-        { en: "Dog", fr: "Chien", ar: "كلب", emoji: "🐶" },
-        { en: "Cow", fr: "Vache", ar: "بقرة", emoji: "🐮" },
-        { en: "Elephant", fr: "Éléphant", ar: "فيل", emoji: "🐘" },
-        { en: "Bird", fr: "Oiseau", ar: "عصفور", emoji: "🐦" },
-        
-        // Additional animals - Farm & Domestic
-        { en: "Horse", fr: "Cheval", ar: "حصان", emoji: "🐴" },
-        { en: "Pig", fr: "Cochon", ar: "خنزير", emoji: "🐷" },
-        { en: "Sheep", fr: "Mouton", ar: "خروف", emoji: "🐑" },
-        { en: "Goat", fr: "Chèvre", ar: "ماعز", emoji: "🐐" },
-        { en: "Rabbit", fr: "Lapin", ar: "أرنب", emoji: "🐰" },
-        { en: "Chicken", fr: "Poulet", ar: "دجاجة", emoji: "🐔" },
-        { en: "Duck", fr: "Canard", ar: "بطة", emoji: "🦆" },
-        
-        // Wild animals
-        { en: "Tiger", fr: "Tigre", ar: "نمر", emoji: "🐯" },
-        { en: "Bear", fr: "Ours", ar: "دب", emoji: "🐻" },
-        { en: "Monkey", fr: "Singe", ar: "قرد", emoji: "🐵" },
-        { en: "Panda", fr: "Panda", ar: "باندا", emoji: "🐼" },
-        { en: "Koala", fr: "Koala", ar: "كوالا", emoji: "🐨" },
-        { en: "Penguin", fr: "Pingouin", ar: "بطريق", emoji: "🐧" },
-        { en: "Owl", fr: "Hibou", ar: "بومة", emoji: "🦉" },
-        
-        // Sea animals
-        { en: "Fish", fr: "Poisson", ar: "سمكة", emoji: "🐟" },
-        { en: "Dolphin", fr: "Dauphin", ar: "دلفين", emoji: "🐬" },
-        { en: "Whale", fr: "Baleine", ar: "حوت", emoji: "🐋" },
-        { en: "Octopus", fr: "Poulpe", ar: "أخطبوط", emoji: "🐙" },
-        { en: "Shark", fr: "Requin", ar: "قرش", emoji: "🦈" },
-        { en: "Turtle", fr: "Tortue", ar: "سلحفاة", emoji: "🐢" },
-        { en: "Frog", fr: "Grenouille", ar: "ضفدع", emoji: "🐸" },
-        
-        // More animals
-        { en: "Butterfly", fr: "Papillon", ar: "فراشة", emoji: "🦋" },
-        { en: "Bee", fr: "Abeille", ar: "نحلة", emoji: "🐝" },
-        { en: "Snail", fr: "Escargot", ar: "حلزون", emoji: "🐌" },
-        { en: "Ladybug", fr: "Coccinelle", ar: "خنفساء", emoji: "🐞" },
-        { en: "Giraffe", fr: "Girafe", ar: "زرافة", emoji: "🦒" },
-        { en: "Zebra", fr: "Zèbre", ar: "حمار وحشي", emoji: "🦓" },
-        { en: "Hippo", fr: "Hippopotame", ar: "فرس النهر", emoji: "🦛" },
-        { en: "Crocodile", fr: "Crocodile", ar: "تمساح", emoji: "🐊" },
-        { en: "Kangaroo", fr: "Kangourou", ar: "كنغر", emoji: "🦘" },
-        { en: "Fox", fr: "Renard", ar: "ثعلب", emoji: "🦊" },
-        { en: "Raccoon", fr: "Raton laveur", ar: "راكون", emoji: "🦝" },
-        { en: "Llama", fr: "Lama", ar: "لاما", emoji: "🦙" },
-        { en: "Peacock", fr: "Paon", ar: "طاووس", emoji: "🦚" },
-        { en: "Swan", fr: "Cygne", ar: "بجعة", emoji: "🦢" },
-        { en: "Parrot", fr: "Perroquet", ar: "ببغاء", emoji: "🦜" },
-        { en: "Bat", fr: "Chauve-souris", ar: "خفاش", emoji: "🦇" },
-        { en: "Hedgehog", fr: "Hérisson", ar: "قنفذ", emoji: "🦔" },
-        { en: "Dinosaur", fr: "Dinosaure", ar: "ديناصور", emoji: "🦖" },
-        { en: "Dragon", fr: "Dragon", ar: "تنين", emoji: "🐉" },
-        { en: "Unicorn", fr: "Licorne", ar: "حصان وحيد القرن", emoji: "🦄" }
-    ];
 
     // Store current language for each animal
     let animalLanguages = new Map();
 
-    function getRandomLanguage() {
-        return languages[Math.floor(Math.random() * languages.length)];
-    }
-
-    function speak(text, langCode) {
-        SpeechManager.speak(text, langCode);
-    }
+    // Store current zoom state
+    let isZoomed = false;
+    let zoomTimeout = null;
 
     function getAnimalName(animal, langCode) {
         switch(langCode) {
@@ -252,21 +304,78 @@
         }
     }
 
-    function getLangName(langCode) {
-        const lang = languages.find(l => l.code === langCode);
-        return lang ? lang.name : 'English';
+    function showZoomedCard(animal, langCode) {
+        if (isZoomed) return;
+        
+        isZoomed = true;
+        
+        // 1. Add zooming class to body
+        document.body.classList.add('zooming');
+        
+        // 2. Get the zoom overlay
+        const zoomOverlay = document.getElementById('zoomOverlay');
+        
+        // 3. Get the current animal name
+        const name = getAnimalName(animal, langCode);
+        
+        // 4. Create the zoomed card
+        zoomOverlay.innerHTML = `
+            <div class="zoomed-card" style="background-color: ${getAnimalColor(animal)};">
+                <span class="zoomed-emoji">${animal.emoji}</span>
+                <span class="zoomed-name">${name}</span>
+            </div>
+        `;
+        
+        // 5. Show the zoom overlay
+        zoomOverlay.style.display = 'flex';
+        
+        // 6. Speak the name
+        SpeechManager.speak(name, langCode);
+        
+        // 7. Set timeout to hide the zoom after 3 seconds
+        zoomTimeout = setTimeout(() => {
+            hideZoomedCard();
+        }, 3000);
     }
 
-    function updateCardDisplay(card, animal) {
-        const currentLang = animalLanguages.get(animal.en) || 'en-US';
-        const name = getAnimalName(animal, currentLang);
-        const langName = getLangName(currentLang);
+    function hideZoomedCard() {
+        if (!isZoomed) return;
         
-        const nameSpan = card.querySelector('.name');
-        const hintSpan = card.querySelector('.lang-hint');
+        const zoomOverlay = document.getElementById('zoomOverlay');
         
-        nameSpan.textContent = name;
-        hintSpan.textContent = `(${langName})`;
+        // Add zoom out animation
+        const zoomedCard = zoomOverlay.querySelector('.zoomed-card');
+        if (zoomedCard) {
+            zoomedCard.style.animation = 'zoomOut 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+        }
+        
+        // Hide after animation completes
+        setTimeout(() => {
+            zoomOverlay.style.display = 'none';
+            zoomOverlay.innerHTML = '';
+            document.body.classList.remove('zooming');
+            isZoomed = false;
+        }, 300);
+        
+        // Clear the timeout
+        if (zoomTimeout) {
+            clearTimeout(zoomTimeout);
+            zoomTimeout = null;
+        }
+    }
+
+    // Helper function to get animal color based on index
+    function getAnimalColor(animal) {
+        const index = animals.findIndex(a => a.en === animal.en);
+        const colors = [
+            '#ff595e', // Red
+            '#ffca3a', // Yellow
+            '#8ac926', // Green
+            '#1982c4', // Blue
+            '#6a4c93', // Purple
+            '#ff924c'  // Orange
+        ];
+        return colors[index] || '#ff595e';
     }
 
     function render() {
@@ -277,49 +386,97 @@
             const card = document.createElement('div');
             card.className = 'animal-card';
             
-            // Initialize with default language (English) if not set
-            const currentLang = animalLanguages.get(animal.en) || 'en-US';
-            const currentName = getAnimalName(animal, currentLang);
-            const langName = getLangName(currentLang);
+            // Default to English
+            animalLanguages.set(animal.en, 'en-US');
             
             card.innerHTML = `
                 <span class="emoji">${animal.emoji}</span>
-                <span class="name">${currentName}</span>
-                <div class="lang-hint">(${langName})</div>
+                <span class="name">${animal.en}</span>
             `;
             
-            card.onclick = () => {
-                // Get a new random language
-                const newLang = getRandomLanguage();
+            // Baby-friendly interaction
+            const handleInteraction = (e) => {
+                e.preventDefault();
                 
-                // Store the new language for this animal
+                // If already zoomed, hide it first
+                if (isZoomed) {
+                    hideZoomedCard();
+                    return;
+                }
+                
+                // 1. Haptic Feedback (Vibration)
+                if ('vibrate' in navigator) navigator.vibrate([30, 50, 30]);
+
+                // 2. Logic: Cycle through languages (more predictable than random)
+                let currentLangCode = animalLanguages.get(animal.en);
+                let currentIndex = languages.findIndex(l => l.code === currentLangCode);
+                let nextIndex = (currentIndex + 1) % languages.length;
+                let newLang = languages[nextIndex];
+
                 animalLanguages.set(animal.en, newLang.code);
                 
-                // Update the display
-                updateCardDisplay(card, animal);
+                // 3. Update Display
+                card.querySelector('.name').textContent = getAnimalName(animal, newLang.code);
                 
-                // Speak the name (SpeechManager will cancel any ongoing speech)
-                const name = getAnimalName(animal, newLang.code);
-                speak(name, newLang.code);
+                // 4. Show zoomed card with the name
+                showZoomedCard(animal, newLang.code);
             };
+
+            card.addEventListener('touchstart', handleInteraction);
+            card.addEventListener('mousedown', handleInteraction);
             
             grid.appendChild(card);
         });
     }
 
-    // Initialize
+    // Initialize speech synthesis
+    function initSpeech() {
+        if ('speechSynthesis' in window) {
+            // Get available voices (some browsers load them asynchronously)
+            speechSynthesis.getVoices();
+            
+            // Re-check after a short delay
+            setTimeout(() => {
+                const voices = speechSynthesis.getVoices();
+                console.log("Available TTS voices:", voices.length);
+            }, 500);
+        } else {
+            console.error("Text-to-speech not supported in this browser");
+        }
+    }
+
+    // Handle orientation change to ensure proper rendering
+    function handleOrientationChange() {
+        // Force a re-render to apply the correct grid layout
+        render();
+    }
+
+    // Render the grid
     render();
     
-    // Hide scroll indicator after 5 seconds
-    setTimeout(() => {
-        const indicator = document.querySelector('.scroll-indicator');
-        if (indicator) {
-            indicator.style.opacity = '0';
-            indicator.style.transition = 'opacity 1s';
-            setTimeout(() => indicator.style.display = 'none', 1000);
-        }
-    }, 5000);
+    // Initialize speech on page load
+    document.addEventListener('DOMContentLoaded', initSpeech);
     
+    // Also initialize when voices are loaded (some browsers)
+    if ('speechSynthesis' in window) {
+        speechSynthesis.onvoiceschanged = initSpeech;
+    }
+
+    // Listen for orientation changes
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener('resize', handleOrientationChange);
+
+    // Allow tap on zoom overlay to close it
+    document.getElementById('zoomOverlay').addEventListener('click', hideZoomedCard);
+    document.getElementById('zoomOverlay').addEventListener('touchstart', hideZoomedCard);
+
+    // Prevent pulling down to refresh or zooming (but allow during zoom)
+    document.addEventListener('touchmove', (e) => {
+        if (!isZoomed) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js');
     }
