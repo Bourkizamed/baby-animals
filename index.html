@@ -230,101 +230,7 @@
 <div class="zoom-overlay" id="zoomOverlay"></div>
 
 <script>
-    // ========== NUCLEAR BACK BUTTON PREVENTION ==========
-    let backButtonBlocked = false;
-    
-    function nuclearBackButtonPrevention() {
-        console.log('🚀 Initializing nuclear back button prevention...');
-        
-        // 1. COMPLETELY replace history with current page
-        history.replaceState('LOCKED', null, window.location.href);
-        
-        // 2. Override pushState to ALWAYS use current URL
-        const originalPushState = history.pushState;
-        history.pushState = function(state, title, url) {
-            console.log('🔒 pushState intercepted - forcing current URL');
-            return originalPushState.call(history, state, title, window.location.href);
-        };
-        
-        // 3. Override replaceState too
-        const originalReplaceState = history.replaceState;
-        history.replaceState = function(state, title, url) {
-            console.log('🔒 replaceState intercepted - forcing current URL');
-            return originalReplaceState.call(history, state, title, window.location.href);
-        };
-        
-        // 4. Catch ALL back button attempts with popstate
-        window.addEventListener('popstate', function(event) {
-            console.log('⚠️ popstate detected - back button attempt!');
-            
-            if (!backButtonBlocked) {
-                backButtonBlocked = true;
-                
-                // IMMEDIATELY replace history
-                history.replaceState('LOCKED', null, window.location.href);
-                
-                // Strong vibration feedback (distinct pattern)
-                if ('vibrate' in navigator) {
-                    navigator.vibrate([100, 50, 100, 50, 100]);
-                }
-                
-                console.log('🚫 Back button BLOCKED (nuclear prevention active)');
-                
-                // Reset block after short delay
-                setTimeout(() => { 
-                    backButtonBlocked = false; 
-                    console.log('🔄 Back button protection ready again');
-                }, 300);
-            }
-            
-            // Prevent default behavior
-            event.preventDefault();
-            return false;
-        }, true); // Use capture phase to catch it early
-        
-        // 5. For Android WebView/Cordova (if running in app wrapper)
-        document.addEventListener('backbutton', function(e) {
-            console.log('📱 Android back button detected!');
-            e.preventDefault();
-            e.stopPropagation();
-            history.replaceState('LOCKED', null, window.location.href);
-            
-            if ('vibrate' in navigator) {
-                navigator.vibrate([100, 50, 100, 50, 100]);
-            }
-            
-            console.log('🚫 Android back button BLOCKED');
-            return false;
-        }, false);
-        
-        // 6. Continuous history locking (every 250ms for maximum protection)
-        const historyLockInterval = setInterval(() => {
-            if (history.state !== 'LOCKED') {
-                history.replaceState('LOCKED', null, window.location.href);
-                console.log('🔐 History re-locked');
-            }
-        }, 250);
-        
-        // 7. Also prevent beforeunload (closing the app)
-        window.addEventListener('beforeunload', function(e) {
-            console.log('⛔ Attempt to close/refresh blocked');
-            e.preventDefault();
-            e.returnValue = 'Use the home button to exit the app. Back button is disabled for child safety.';
-            return e.returnValue;
-        });
-        
-        console.log('✅ Nuclear back button prevention ACTIVATED');
-        
-        // Test vibration to confirm code is running
-        if ('vibrate' in navigator) {
-            setTimeout(() => {
-                navigator.vibrate([100, 100]);
-                console.log('📳 Test vibration - code is running');
-            }, 500);
-        }
-    }
-
-    // ========== Speech Manager ==========
+    // Speech Manager to handle speech synthesis with interruption
     const SpeechManager = {
         currentUtterance: null,
         isSpeaking: false,
@@ -391,6 +297,9 @@
     // Store current zoom state
     let isZoomed = false;
     let zoomTimeout = null;
+
+    // Track if we're in standalone mode (installed as PWA)
+    let isStandalone = false;
 
     function getAnimalName(animal, langCode) {
         switch(langCode) {
@@ -547,19 +456,78 @@
         render();
     }
 
+    // AGGRESSIVE back button prevention for pinned apps
+    function preventBackButton() {
+        // Method 1: Completely prevent navigation
+        window.history.pushState(null, null, window.location.href);
+        
+        // Method 2: Override back button on every popstate event
+        window.onpopstate = function(event) {
+            window.history.pushState(null, null, window.location.href);
+            console.log('Back button pressed - prevented');
+            
+            // Strong haptic feedback
+            if ('vibrate' in navigator) {
+                navigator.vibrate([50, 100, 50, 100]);
+            }
+            return false;
+        };
+        
+        // Method 3: Prevent any form of navigation
+        window.onbeforeunload = function(e) {
+            e.preventDefault();
+            e.returnValue = 'The app cannot be closed with the back button.';
+            return e.returnValue;
+        };
+        
+        // Method 4: Android-specific back button (for WebView/Cordova)
+        document.addEventListener('backbutton', function(e) {
+            e.preventDefault();
+            window.history.pushState(null, null, window.location.href);
+            
+            // Strong haptic feedback
+            if ('vibrate' in navigator) {
+                navigator.vibrate([50, 100, 50, 100]);
+            }
+        }, false);
+        
+        // Method 5: Lock the history stack
+        setInterval(function() {
+            if (window.history.length > 1) {
+                window.history.pushState(null, null, window.location.href);
+            }
+        }, 1000);
+    }
+
+    // Check if app is running in standalone mode (installed as PWA)
+    function checkStandaloneMode() {
+        // Check various indicators of standalone mode
+        isStandalone = (
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.matchMedia('(display-mode: fullscreen)').matches ||
+            window.matchMedia('(display-mode: minimal-ui)').matches ||
+            window.navigator.standalone === true ||
+            document.referrer.includes('android-app://')
+        );
+        
+        console.log('App running in standalone mode:', isStandalone);
+        return isStandalone;
+    }
+
     // Render the grid
     render();
     
-    // ========== INITIALIZATION ==========
+    // Initialize speech on page load
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🎯 Baby Animal World - DOM loaded');
-        
         initSpeech();
+        checkStandaloneMode();
         
-        // Start NUCLEAR back button prevention IMMEDIATELY
-        nuclearBackButtonPrevention();
-        
-        console.log('✅ App fully initialized with back button protection');
+        // Initialize aggressive back button prevention
+        setTimeout(function() {
+            preventBackButton();
+            // Initial history push
+            window.history.pushState(null, null, window.location.href);
+        }, 100);
     });
     
     // Also initialize when voices are loaded (some browsers)
@@ -586,9 +554,9 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
             navigator.serviceWorker.register('sw.js').then(function(registration) {
-                console.log('✅ ServiceWorker registered successfully');
+                console.log('ServiceWorker registration successful');
             }, function(err) {
-                console.log('❌ ServiceWorker registration failed:', err);
+                console.log('ServiceWorker registration failed: ', err);
             });
         });
     }
@@ -596,6 +564,7 @@
     // Extra protection: prevent any context menu (long press)
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
+        if ('vibrate' in navigator) navigator.vibrate(50);
         return false;
     });
 
@@ -610,6 +579,24 @@
         e.preventDefault();
         return false;
     });
+
+    // Additional: Make sure the app stays full screen
+    function enterFullScreen() {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+            document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            document.documentElement.msRequestFullscreen();
+        }
+    }
+
+    // Try to enter full screen mode on load
+    if (isStandalone) {
+        setTimeout(enterFullScreen, 1000);
+    }
 </script>
 </body>
 </html>
