@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#121212">
     <title>Baby Animal World</title>
     <style>
         :root { 
@@ -296,6 +298,9 @@
     let isZoomed = false;
     let zoomTimeout = null;
 
+    // Track if we're in standalone mode (installed as PWA)
+    let isStandalone = false;
+
     function getAnimalName(animal, langCode) {
         switch(langCode) {
             case 'fr-FR': return animal.fr;
@@ -451,11 +456,57 @@
         render();
     }
 
+    // Prevent the back button from working
+    function preventBackButton() {
+        // Method 1: Prevent default back behavior
+        window.history.pushState(null, null, window.location.pathname);
+        
+        // Method 2: Add event listener for popstate
+        window.addEventListener('popstate', function(event) {
+            window.history.pushState(null, null, window.location.pathname);
+            
+            // Optional: Show a visual feedback that back button is disabled
+            if ('vibrate' in navigator) {
+                navigator.vibrate(100); // Quick vibration to indicate action blocked
+            }
+        });
+        
+        // Method 3: For Android back button specifically
+        document.addEventListener('backbutton', function(e) {
+            e.preventDefault();
+            if ('vibrate' in navigator) {
+                navigator.vibrate(100);
+            }
+        }, false);
+    }
+
+    // Check if app is running in standalone mode (installed as PWA)
+    function checkStandaloneMode() {
+        // Check various indicators of standalone mode
+        isStandalone = (
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.matchMedia('(display-mode: fullscreen)').matches ||
+            window.matchMedia('(display-mode: minimal-ui)').matches ||
+            window.navigator.standalone === true ||
+            document.referrer.includes('android-app://')
+        );
+        
+        console.log('App running in standalone mode:', isStandalone);
+        return isStandalone;
+    }
+
     // Render the grid
     render();
     
     // Initialize speech on page load
-    document.addEventListener('DOMContentLoaded', initSpeech);
+    document.addEventListener('DOMContentLoaded', function() {
+        initSpeech();
+        checkStandaloneMode();
+        preventBackButton();
+        
+        // Initial history push to prevent back navigation
+        window.history.pushState(null, null, window.location.pathname);
+    });
     
     // Also initialize when voices are loaded (some browsers)
     if ('speechSynthesis' in window) {
@@ -477,9 +528,38 @@
         }
     }, { passive: false });
 
+    // Service Worker for PWA capabilities
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('sw.js').then(function(registration) {
+                console.log('ServiceWorker registration successful');
+            }, function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        });
     }
+
+    // Extra protection: prevent any context menu (long press)
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    });
+
+    // Prevent text selection
+    document.addEventListener('selectstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+
+    // Additional back button prevention for Android
+    window.addEventListener('beforeunload', function(e) {
+        if (isStandalone) {
+            // In standalone mode, don't allow navigation away
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        }
+    });
 </script>
 </body>
 </html>
