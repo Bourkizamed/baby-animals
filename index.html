@@ -456,28 +456,47 @@
         render();
     }
 
-    // Prevent the back button from working
+    // AGGRESSIVE back button prevention for pinned apps
     function preventBackButton() {
-        // Method 1: Prevent default back behavior
-        window.history.pushState(null, null, window.location.pathname);
+        // Method 1: Completely prevent navigation
+        window.history.pushState(null, null, window.location.href);
         
-        // Method 2: Add event listener for popstate
-        window.addEventListener('popstate', function(event) {
-            window.history.pushState(null, null, window.location.pathname);
+        // Method 2: Override back button on every popstate event
+        window.onpopstate = function(event) {
+            window.history.pushState(null, null, window.location.href);
+            console.log('Back button pressed - prevented');
             
-            // Optional: Show a visual feedback that back button is disabled
+            // Strong haptic feedback
             if ('vibrate' in navigator) {
-                navigator.vibrate(100); // Quick vibration to indicate action blocked
+                navigator.vibrate([50, 100, 50, 100]);
             }
-        });
+            return false;
+        };
         
-        // Method 3: For Android back button specifically
+        // Method 3: Prevent any form of navigation
+        window.onbeforeunload = function(e) {
+            e.preventDefault();
+            e.returnValue = 'The app cannot be closed with the back button.';
+            return e.returnValue;
+        };
+        
+        // Method 4: Android-specific back button (for WebView/Cordova)
         document.addEventListener('backbutton', function(e) {
             e.preventDefault();
+            window.history.pushState(null, null, window.location.href);
+            
+            // Strong haptic feedback
             if ('vibrate' in navigator) {
-                navigator.vibrate(100);
+                navigator.vibrate([50, 100, 50, 100]);
             }
         }, false);
+        
+        // Method 5: Lock the history stack
+        setInterval(function() {
+            if (window.history.length > 1) {
+                window.history.pushState(null, null, window.location.href);
+            }
+        }, 1000);
     }
 
     // Check if app is running in standalone mode (installed as PWA)
@@ -502,10 +521,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         initSpeech();
         checkStandaloneMode();
-        preventBackButton();
         
-        // Initial history push to prevent back navigation
-        window.history.pushState(null, null, window.location.pathname);
+        // Initialize aggressive back button prevention
+        setTimeout(function() {
+            preventBackButton();
+            // Initial history push
+            window.history.pushState(null, null, window.location.href);
+        }, 100);
     });
     
     // Also initialize when voices are loaded (some browsers)
@@ -542,6 +564,7 @@
     // Extra protection: prevent any context menu (long press)
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
+        if ('vibrate' in navigator) navigator.vibrate(50);
         return false;
     });
 
@@ -551,15 +574,29 @@
         return false;
     });
 
-    // Additional back button prevention for Android
-    window.addEventListener('beforeunload', function(e) {
-        if (isStandalone) {
-            // In standalone mode, don't allow navigation away
-            e.preventDefault();
-            e.returnValue = '';
-            return '';
-        }
+    // Prevent dragging images
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
     });
+
+    // Additional: Make sure the app stays full screen
+    function enterFullScreen() {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+            document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            document.documentElement.msRequestFullscreen();
+        }
+    }
+
+    // Try to enter full screen mode on load
+    if (isStandalone) {
+        setTimeout(enterFullScreen, 1000);
+    }
 </script>
 </body>
 </html>
