@@ -1,602 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#121212">
-    <title>Baby Animal World</title>
-    <style>
-        :root { 
-            --bg-color: #121212; /* Dark background for high contrast */
-            --text-color: #ffffff; 
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Baby Animal World</title>
 
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            /* Prevent all accidental scrolling and gestures */
-            touch-action: none;
-            user-select: none;
-            -webkit-user-select: none;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            position: fixed;
-        }
+<style>
+:root {
+  --bg:#181818; /* Softer than pure black for baby eyes */
+}
 
-        /* Hidden but present for accessibility/SEO */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
-        }
+body {
+  margin:0;
+  background:var(--bg);
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  touch-action:none;
+  user-select:none;
+  font-family:system-ui;
+}
 
-        .grid-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-            box-sizing: border-box;
-            transition: opacity 0.3s ease;
-        }
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:18px;
+  width:100%;
+  height:100%;
+  padding:18px;
+  max-width:700px;
+}
 
-        .grid {
-            display: grid;
-            gap: 15px;
-            width: 100%;
-            height: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-        }
+@media (orientation:landscape){
+  .grid { grid-template-columns:repeat(3,1fr); }
+}
 
-        /* Portrait orientation: 2 columns, 3 rows */
-        @media (orientation: portrait) {
-            .grid {
-                grid-template-columns: repeat(2, 1fr);
-                grid-template-rows: repeat(3, 1fr);
-            }
-        }
+.card {
+  border-radius:38px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  font-size:5rem;
+  box-shadow:0 6px 15px rgba(0,0,0,.35);
+  cursor:pointer;
+  transition:transform .1s ease;
+}
 
-        /* Landscape orientation: 3 columns, 2 rows */
-        @media (orientation: landscape) {
-            .grid {
-                grid-template-columns: repeat(3, 1fr);
-                grid-template-rows: repeat(2, 1fr);
-            }
-            
-            /* Adjust font sizes for landscape */
-            .emoji { 
-                font-size: clamp(4rem, 10vw, 5rem) !important;
-            }
-            
-            .name { 
-                font-size: clamp(1rem, 4vw, 1.8rem) !important;
-            }
-        }
+.card:active {
+  transform:scale(.97);
+}
 
-        .animal-card {
-            border-radius: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            -webkit-tap-highlight-color: transparent;
-            cursor: pointer;
-            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            z-index: 1;
-        }
+.card span {
+  font-size:1.8rem;
+  font-weight:900;
+  color:white;
+  margin-top:10px;
+}
 
-        /* High-saturation colors for baby visual stimulation */
-        .animal-card:nth-child(1) { background-color: #ff595e; } /* Red */
-        .animal-card:nth-child(2) { background-color: #ffca3a; } /* Yellow */
-        .animal-card:nth-child(3) { background-color: #8ac926; } /* Green */
-        .animal-card:nth-child(4) { background-color: #1982c4; } /* Blue */
-        .animal-card:nth-child(5) { background-color: #6a4c93; } /* Purple */
-        .animal-card:nth-child(6) { background-color: #ff924c; } /* Orange */
+.zoom {
+  position:fixed;
+  inset:0;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  background:#181818;
+  z-index:10;
+}
 
-        .animal-card:active { 
-            transform: scale(0.92); 
-            filter: brightness(1.2);
-        }
+.zoomCard {
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  animation:zoomIn .5s ease;
+}
 
-        .emoji { 
-            font-size: clamp(4rem, 15vw, 6rem);
-            display: block; 
-            margin-bottom: 5px;
-            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
-            transition: transform 0.3s ease;
-        }
+.zoomEmoji {
+  font-size:11rem;
+}
 
-        .name { 
-            font-size: clamp(1.2rem, 5vw, 2.2rem);
-            font-weight: 900; 
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: transform 0.3s ease;
-        }
+.zoomText {
+  font-size:4rem;
+  font-weight:900;
+  color:white;
+  margin-top:20px;
+}
 
-        /* Zoom overlay styles */
-        .zoom-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            background-color: var(--bg-color);
-        }
-
-        .zoomed-card {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            border-radius: 0;
-            animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        .zoomed-emoji {
-            font-size: clamp(8rem, 30vw, 12rem);
-            display: block;
-            margin-bottom: 20px;
-            filter: drop-shadow(0 8px 8px rgba(0,0,0,0.3));
-            animation: pulse 0.5s ease-in-out;
-        }
-
-        .zoomed-name {
-            font-size: clamp(2.5rem, 10vw, 5rem);
-            font-weight: 900;
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        @keyframes zoomIn {
-            0% {
-                transform: scale(0.5);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        @keyframes zoomOut {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(0.5);
-                opacity: 0;
-            }
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.1);
-            }
-        }
-
-        /* Hide grid when zoomed */
-        .zooming .grid-container {
-            opacity: 0;
-            pointer-events: none;
-        }
-    </style>
+@keyframes zoomIn {
+  from {transform:scale(.7);opacity:0;}
+  to {transform:scale(1);opacity:1;}
+}
+</style>
 </head>
+
 <body>
 
-<h1 class="sr-only">Baby Animal World</h1>
+<div class="grid" id="grid"></div>
 
-<div class="grid-container">
-    <div class="grid" id="animalGrid"></div>
-</div>
-
-<!-- Zoom overlay -->
-<div class="zoom-overlay" id="zoomOverlay"></div>
+<div class="zoom" id="zoom"></div>
 
 <script>
-    // Speech Manager to handle speech synthesis with interruption
-    const SpeechManager = {
-        currentUtterance: null,
-        isSpeaking: false,
-        
-        speak(text, langCode) {
-            // Cancel any ongoing speech immediately
-            this.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = langCode;
-            utterance.rate = 0.8;
-            utterance.pitch = 1.2; // Higher pitch for baby-friendly tone
-            utterance.volume = 1;
-            
-            // Adjust for Arabic - slower for proper pronunciation
-            if (langCode === 'ar-SA') {
-                utterance.rate = 0.7;
-            }
-            
-            this.currentUtterance = utterance;
-            
-            utterance.onend = () => {
-                this.currentUtterance = null;
-                this.isSpeaking = false;
-            };
-            
-            utterance.onerror = () => {
-                this.currentUtterance = null;
-                this.isSpeaking = false;
-            };
-            
-            this.isSpeaking = true;
-            window.speechSynthesis.speak(utterance);
-        },
-        
-        cancel() {
-            if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.cancel();
-                this.currentUtterance = null;
-                this.isSpeaking = false;
-            }
-        }
-    };
 
-    const animals = [
-        // Original 6 animals - using Arabic with تشكيل for better pronunciation
-        { en: "Lion", fr: "Lion", ar: "أَسَد", emoji: "🦁" },
-        { en: "Cat", fr: "Chat", ar: "قِطَّة", emoji: "🐱" },
-        { en: "Dog", fr: "Chien", ar: "كَلْب", emoji: "🐶" },
-        { en: "Cow", fr: "Vache", ar: "بَقَرَة", emoji: "🐮" },
-        { en: "Elephant", fr: "Éléphant", ar: "فِيل", emoji: "🐘" },
-        { en: "Bird", fr: "Oiseau", ar: "عُصْفُور", emoji: "🐦" }
-    ];
+// ------------------ AUDIO ENGINE ------------------
 
-    const languages = [
-        { code: 'en-US', name: 'English' },
-        { code: 'fr-FR', name: 'Français' },
-        { code: 'ar-SA', name: 'العربية' }
-    ];
+const player = {
+  audio:null,
 
-    // Store current language for each animal
-    let animalLanguages = new Map();
+  play(file){
+    this.stop();
+    this.audio = new Audio(file);
+    this.audio.volume = 0.45; // Baby safe volume
+    this.audio.play().catch(()=>{});
+  },
 
-    // Store current zoom state
-    let isZoomed = false;
-    let zoomTimeout = null;
-
-    // Track if we're in standalone mode (installed as PWA)
-    let isStandalone = false;
-
-    function getAnimalName(animal, langCode) {
-        switch(langCode) {
-            case 'fr-FR': return animal.fr;
-            case 'ar-SA': return animal.ar;
-            default: return animal.en;
-        }
+  stop(){
+    if(this.audio){
+      this.audio.pause();
+      this.audio.currentTime = 0;
+      this.audio = null;
     }
+  }
+};
 
-    function showZoomedCard(animal, langCode) {
-        if (isZoomed) return;
-        
-        isZoomed = true;
-        
-        // 1. Add zooming class to body
-        document.body.classList.add('zooming');
-        
-        // 2. Get the zoom overlay
-        const zoomOverlay = document.getElementById('zoomOverlay');
-        
-        // 3. Get the current animal name
-        const name = getAnimalName(animal, langCode);
-        
-        // 4. Create the zoomed card
-        zoomOverlay.innerHTML = `
-            <div class="zoomed-card" style="background-color: ${getAnimalColor(animal)};">
-                <span class="zoomed-emoji">${animal.emoji}</span>
-                <span class="zoomed-name">${name}</span>
-            </div>
-        `;
-        
-        // 5. Show the zoom overlay
-        zoomOverlay.style.display = 'flex';
-        
-        // 6. Speak the name
-        SpeechManager.speak(name, langCode);
-        
-        // 7. Set timeout to hide the zoom after 3 seconds
-        zoomTimeout = setTimeout(() => {
-            hideZoomedCard();
-        }, 3000);
-    }
+// ------------------ BABY SAFE COLORS ------------------
 
-    function hideZoomedCard() {
-        if (!isZoomed) return;
-        
-        const zoomOverlay = document.getElementById('zoomOverlay');
-        
-        // Add zoom out animation
-        const zoomedCard = zoomOverlay.querySelector('.zoomed-card');
-        if (zoomedCard) {
-            zoomedCard.style.animation = 'zoomOut 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
-        }
-        
-        // Hide after animation completes
-        setTimeout(() => {
-            zoomOverlay.style.display = 'none';
-            zoomOverlay.innerHTML = '';
-            document.body.classList.remove('zooming');
-            isZoomed = false;
-        }, 300);
-        
-        // Clear the timeout
-        if (zoomTimeout) {
-            clearTimeout(zoomTimeout);
-            zoomTimeout = null;
-        }
-    }
+const animals = [
+{
+emoji:"🦁", color:"#FF9AA2", // soft coral
+sound:"lion.mp3",
+en:"Lion", fr:"Lion", ar:"أَسَد"
+},
+{
+emoji:"🐱", color:"#FFD97D", // warm yellow
+sound:"cat.mp3",
+en:"Cat", fr:"Chat", ar:"قِطَّة"
+},
+{
+emoji:"🐶", color:"#A7E8BD", // mint green
+sound:"dog.mp3",
+en:"Dog", fr:"Chien", ar:"كَلْب"
+},
+{
+emoji:"🐮", color:"#9AD0EC", // soft blue
+sound:"cow.mp3",
+en:"Cow", fr:"Vache", ar:"بَقَرَة"
+},
+{
+emoji:"🐘", color:"#FFDAC1", // lavender
+sound:"elephant.mp3",
+en:"Elephant", fr:"Éléphant", ar:"فِيل"
+},
+{
+emoji:"🐦", color:"#FFB703", // baby orange
+sound:"bird.mp3",
+en:"Bird", fr:"Oiseau", ar:"عُصْفُور"
+}
+];
 
-    // Helper function to get animal color based on index
-    function getAnimalColor(animal) {
-        const index = animals.findIndex(a => a.en === animal.en);
-        const colors = [
-            '#ff595e', // Red
-            '#ffca3a', // Yellow
-            '#8ac926', // Green
-            '#1982c4', // Blue
-            '#6a4c93', // Purple
-            '#ff924c'  // Orange
-        ];
-        return colors[index] || '#ff595e';
-    }
+// ------------------ STATE ------------------
 
-    function render() {
-        const grid = document.getElementById('animalGrid');
-        grid.innerHTML = '';
-        
-        animals.forEach(animal => {
-            const card = document.createElement('div');
-            card.className = 'animal-card';
-            
-            // Default to English
-            animalLanguages.set(animal.en, 'en-US');
-            
-            card.innerHTML = `
-                <span class="emoji">${animal.emoji}</span>
-                <span class="name">${animal.en}</span>
-            `;
-            
-            // Baby-friendly interaction
-            const handleInteraction = (e) => {
-                e.preventDefault();
-                
-                // If already zoomed, hide it first
-                if (isZoomed) {
-                    hideZoomedCard();
-                    return;
-                }
-                
-                // 1. Haptic Feedback (Vibration)
-                if ('vibrate' in navigator) navigator.vibrate([30, 50, 30]);
+let locked = false;
 
-                // 2. Logic: Cycle through languages (more predictable than random)
-                let currentLangCode = animalLanguages.get(animal.en);
-                let currentIndex = languages.findIndex(l => l.code === currentLangCode);
-                let nextIndex = (currentIndex + 1) % languages.length;
-                let newLang = languages[nextIndex];
+// ------------------ UI ------------------
 
-                animalLanguages.set(animal.en, newLang.code);
-                
-                // 3. Update Display
-                card.querySelector('.name').textContent = getAnimalName(animal, newLang.code);
-                
-                // 4. Show zoomed card with the name
-                showZoomedCard(animal, newLang.code);
-            };
+const grid = document.getElementById("grid");
+const zoom = document.getElementById("zoom");
 
-            card.addEventListener('touchstart', handleInteraction);
-            card.addEventListener('mousedown', handleInteraction);
-            
-            grid.appendChild(card);
-        });
-    }
+animals.forEach(animal => {
 
-    // Initialize speech synthesis
-    function initSpeech() {
-        if ('speechSynthesis' in window) {
-            // Get available voices (some browsers load them asynchronously)
-            speechSynthesis.getVoices();
-            
-            // Re-check after a short delay
-            setTimeout(() => {
-                const voices = speechSynthesis.getVoices();
-                console.log("Available TTS voices:", voices.length);
-            }, 500);
-        } else {
-            console.error("Text-to-speech not supported in this browser");
-        }
-    }
+const card = document.createElement("div");
+card.className = "card";
+card.style.background = animal.color;
 
-    // Handle orientation change to ensure proper rendering
-    function handleOrientationChange() {
-        // Force a re-render to apply the correct grid layout
-        render();
-    }
+card.innerHTML = `
+<div>${animal.emoji}</div>
+<span>${animal.en}</span>
+`;
 
-    // AGGRESSIVE back button prevention for pinned apps
-    function preventBackButton() {
-        // Method 1: Completely prevent navigation
-        window.history.pushState(null, null, window.location.href);
-        
-        // Method 2: Override back button on every popstate event
-        window.onpopstate = function(event) {
-            window.history.pushState(null, null, window.location.href);
-            console.log('Back button pressed - prevented');
-            
-            // Strong haptic feedback
-            if ('vibrate' in navigator) {
-                navigator.vibrate([50, 100, 50, 100]);
-            }
-            return false;
-        };
-        
-        // Method 3: Prevent any form of navigation
-        window.onbeforeunload = function(e) {
-            e.preventDefault();
-            e.returnValue = 'The app cannot be closed with the back button.';
-            return e.returnValue;
-        };
-        
-        // Method 4: Android-specific back button (for WebView/Cordova)
-        document.addEventListener('backbutton', function(e) {
-            e.preventDefault();
-            window.history.pushState(null, null, window.location.href);
-            
-            // Strong haptic feedback
-            if ('vibrate' in navigator) {
-                navigator.vibrate([50, 100, 50, 100]);
-            }
-        }, false);
-        
-        // Method 5: Lock the history stack
-        setInterval(function() {
-            if (window.history.length > 1) {
-                window.history.pushState(null, null, window.location.href);
-            }
-        }, 1000);
-    }
+card.onclick = () => playAnimal(animal);
 
-    // Check if app is running in standalone mode (installed as PWA)
-    function checkStandaloneMode() {
-        // Check various indicators of standalone mode
-        isStandalone = (
-            window.matchMedia('(display-mode: standalone)').matches ||
-            window.matchMedia('(display-mode: fullscreen)').matches ||
-            window.matchMedia('(display-mode: minimal-ui)').matches ||
-            window.navigator.standalone === true ||
-            document.referrer.includes('android-app://')
-        );
-        
-        console.log('App running in standalone mode:', isStandalone);
-        return isStandalone;
-    }
+grid.appendChild(card);
 
-    // Render the grid
-    render();
-    
-    // Initialize speech on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        initSpeech();
-        checkStandaloneMode();
-        
-        // Initialize aggressive back button prevention
-        setTimeout(function() {
-            preventBackButton();
-            // Initial history push
-            window.history.pushState(null, null, window.location.href);
-        }, 100);
-    });
-    
-    // Also initialize when voices are loaded (some browsers)
-    if ('speechSynthesis' in window) {
-        speechSynthesis.onvoiceschanged = initSpeech;
-    }
+});
 
-    // Listen for orientation changes
-    window.addEventListener('orientationchange', handleOrientationChange);
-    window.addEventListener('resize', handleOrientationChange);
+// ------------------ LOGIC ------------------
 
-    // Allow tap on zoom overlay to close it
-    document.getElementById('zoomOverlay').addEventListener('click', hideZoomedCard);
-    document.getElementById('zoomOverlay').addEventListener('touchstart', hideZoomedCard);
+function playAnimal(animal){
 
-    // Prevent pulling down to refresh or zooming (but allow during zoom)
-    document.addEventListener('touchmove', (e) => {
-        if (!isZoomed) {
-            e.preventDefault();
-        }
-    }, { passive: false });
+if(locked) return;
+locked = true;
 
-    // Service Worker for PWA capabilities
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('sw.js').then(function(registration) {
-                console.log('ServiceWorker registration successful');
-            }, function(err) {
-                console.log('ServiceWorker registration failed: ', err);
-            });
-        });
-    }
+// gentle vibration feedback
+navigator.vibrate?.(30);
 
-    // Extra protection: prevent any context menu (long press)
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        if ('vibrate' in navigator) navigator.vibrate(50);
-        return false;
-    });
+// SHOW ZOOM
+zoom.style.display = "flex";
+zoom.innerHTML = `
+<div class="zoomCard" style="background:${animal.color}">
+<div class="zoomEmoji">${animal.emoji}</div>
+<div class="zoomText">${animal.en}</div>
+</div>
+`;
 
-    // Prevent text selection
-    document.addEventListener('selectstart', function(e) {
-        e.preventDefault();
-        return false;
-    });
+// PLAY SOUNDS
+player.play(animal.sound);
 
-    // Prevent dragging images
-    document.addEventListener('dragstart', function(e) {
-        e.preventDefault();
-        return false;
-    });
+setTimeout(()=> player.play(`${animal.en}_en.mp3`), 1200);
+setTimeout(()=> player.play(`${animal.en}_fr.mp3`), 2600);
+setTimeout(()=> player.play(`${animal.en}_ar.mp3`), 4200);
 
-    // Additional: Make sure the app stays full screen
-    function enterFullScreen() {
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen();
-        } else if (document.documentElement.mozRequestFullScreen) {
-            document.documentElement.mozRequestFullScreen();
-        } else if (document.documentElement.webkitRequestFullscreen) {
-            document.documentElement.webkitRequestFullscreen();
-        } else if (document.documentElement.msRequestFullscreen) {
-            document.documentElement.msRequestFullscreen();
-        }
-    }
+// CLOSE ZOOM
+setTimeout(()=>{
+zoom.style.display="none";
+player.stop();
+locked=false;
+}, 6000);
 
-    // Try to enter full screen mode on load
-    if (isStandalone) {
-        setTimeout(enterFullScreen, 1000);
-    }
+}
+
+// BLOCK BACK BUTTON (KID SAFE MODE)
+history.pushState(null,null,location.href);
+window.onpopstate=()=>history.pushState(null,null,location.href);
+
 </script>
+
 </body>
 </html>
